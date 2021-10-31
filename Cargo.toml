@@ -1,0 +1,14 @@
+[package]
+name = "mychip8"
+version = "0.1.0"
+edition = "2021"
+authors = ["Night Cruising"]
+license = "MIT"
+description = "A CHIP-8 game console emulator implemented with rust."
+readme = "README.md"
+repository = "https://github.com/night-cruise/mychip8"
+#categories = []
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
