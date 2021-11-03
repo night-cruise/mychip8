@@ -3,6 +3,7 @@ use std::io::Read;
 use std::path::Path;
 use crate::op::OpCode;
 
+/// The chip-8 has a 4KB memory
 const MEMORY_SIZE: usize = 4096;
 
 /// chip-8 memory
@@ -40,6 +41,6 @@ impl Memory {
     /// read 2 bytes data at program counter
     pub fn read16(&self, pc: u16) -> OpCode {
         let pc = pc as usize;
-        OpCode::new(self.mem[pc..(pc+2)].as_ptr() as u16)
+        OpCode::new((self.mem[pc] as u16) << 8 | self.mem[pc+1] as u16)
     }
 }
