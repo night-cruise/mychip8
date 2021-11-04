@@ -43,4 +43,9 @@ impl Memory {
         let pc = pc as usize;
         OpCode::new((self.mem[pc] as u16) << 8 | self.mem[pc+1] as u16)
     }
+
+    /// write data to memory
+    pub fn write(&mut self, address: usize, byte: u8) {
+        self.mem[address] = byte;
+    }
 }
