@@ -1,5 +1,3 @@
-use std::path::Path;
-
 mod mem;
 mod cpu;
 mod op;
