@@ -18,7 +18,7 @@ impl OpCode {
 #[derive(Debug)]
 pub enum Op {
     SYS {address: u16},                 // opcode: 0nnn, jump to a machine code routine at nnn
-    CLS,                                // opcode: 00E0, clear the display
+    CLS,                                // opcode: 00E0, clear the display (todo!)
     RET,                                // opcode: 00EE, return from a subroutine
     JP  {address: u16},                 // opcode: 1nnn, set PC to nnn
     CALL{address: u16},                 // opcode: 2nnn, call subroutine at nnn
@@ -31,11 +31,16 @@ pub enum Op {
     XOR {reg_x: u8, reg_y: u8},         // opcode: 8xy3, set Vx = Vx XOR Vy
     ADD2{reg_x: u8, reg_y: u8},         // opcode: 8xy4, set Vx = Vx + Vy, set VF = carry
     SUB {reg_x: u8, reg_y: u8},         // opcode: 8xy5, set Vx = Vx - Vy, set VF = NOT borrow
-    SHR {reg_x: u8, reg_y: u8},         // opcode: 8xy6, set Vx = Vx SHR 1
+    SHR {reg_x: u8, reg_y: u8},         // opcode: 8xy6, set Vx = Vx SHR 1 (todo!)
     SUBN{reg_x: u8, reg_y: u8},         // opcode: 8xy7, set Vx = Vy - Vx, set VF = NOt borrow
-    SHL {reg_x: u8, reg_y: u8},         // opcode: 8xyE, set Vx = Vx SHL 1
+    SHL {reg_x: u8, reg_y: u8},         // opcode: 8xyE, set Vx = Vx SHL 1 (todo!)
     SNE {reg_x: u8, reg_y: u8},         // opcode: 9xy0, skip next instruction if Vx != Vy.
     LDA {address: u16},                 // opcode: Annn, set I to nnn
+    JPV {address: u16},                 // opcode: Bnnn, jump to location nnn + V0
+    RND {reg_x: u8, byte: u8},          // opcode: Cxkk, set Vx = random byte AND kk
+    DRW {reg_x: u8, reg_y: u8, n: u8},  // opcode: Dxyn, display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
+    SKP {reg_x: u8},                    // opcode: Ex9E, skip next instruction if key with the value of Vx is pressed
+    SKNP{reg_x: u8},                    // opcode: ExA1, skip next instruction if key with the value of Vx is not pressed
     LDI {reg: u8},                      // opcode: Fx55, store registers V0 through Vx in memory starting at location I.
 }
 
@@ -90,6 +95,16 @@ impl Op {
             },
             0x9000 => Op::sne(opcode),
             0xA000 => Op::lda(opcode),
+            0xB000 => Op::jpv(opcode),
+            0xC000 => Op::rnd(opcode),
+            0xD000 => Op::drw(opcode),
+            0xE000 => {
+              match opcode & 0x00FF {
+                  0x009E => Op::skp(opcode),
+                  0x00A1 => Op::sknp(opcode),
+                  _ => panic!("invalid opcode: {:04X}", opcode)
+              }
+            },
             0xF000 => Op::ldi(opcode),
             _ => panic!("invalid opcode: {:04X}", opcode),
         }
@@ -215,6 +230,39 @@ impl Op {
     fn lda(opcode: u16) -> Op {
         Op::LDA {
             address: opcode & 0x0FFF
+        }
+    }
+
+    fn jpv(opcode: u16) -> Op {
+        Op::JPV {
+            address: opcode & 0x0FFF
+        }
+    }
+
+    fn rnd(opcode: u16) -> Op {
+        Op::RND {
+            reg_x: ((opcode & 0x0F00) >> 8) as u8,
+            byte: (opcode & 0x00FF) as u8
+        }
+    }
+
+    fn drw(opcode: u16) -> Op {
+        Op::DRW {
+            reg_x: ((opcode & 0x0F00) >> 8) as u8,
+            reg_y: ((opcode & 0x00F0) >> 4) as u7,
+            n: (opcode & 0x000F) as u8
+        }
+    }
+
+    fn skp(opcode: u16) -> Op {
+        Op::SKP {
+            reg_x: ((opcode & 0x0F00) >> 8) as u8
+        }
+    }
+
+    fn sknp(opcode: u16) -> Op {
+        Op::SKNP {
+            reg_x: ((opcode & 0x0F00) >> 8) as u8
         }
     }
 

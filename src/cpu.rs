@@ -1,3 +1,4 @@
+use rand::Rng;
 use crate::mem::Memory;
 use crate::op::Op;
 
@@ -56,6 +57,11 @@ impl CPU {
             Op::SUBN {reg_x, reg_y} =>       self.subn(reg_x, reg_y),
             Op::SHL {reg_x, reg_y}  =>       self.shl(reg_x, reg_y),
             Op::LDA {address}           =>       self.lda(address),
+            Op::JPV {address}           =>       self.jpv(address),
+            Op::RND {reg_x, byte}    =>       self.rnd(reg_x, byte),
+            Op::DRW {reg_x, reg_y, n}=>  self.drw(reg_x, reg_y, n),
+            Op::SKP {reg_x}               =>      self.skp(reg_x),
+            Op::SKNP {reg_x}              =>      self.sknp(reg_x),
             Op::LDI {reg}                =>       self.ldi(reg, memory),
             _ => todo!()
         }
@@ -69,8 +75,6 @@ impl CPU {
         todo!()
     }
 
-    // the interpreter sets the program counter to the address at the top of the stack,
-    // then subtracts 1 from the stack pointer.
     fn ret(&mut self) {
         self.sp -= 1;
         self.pc = self.stack[self.sp as usize];
@@ -80,7 +84,6 @@ impl CPU {
         self.pc = address;
     }
 
-    // increments stack pointer, then puts the PC on the top of the stack. and set PC to nnn
     fn call(&mut self, address: u16) {
         self.stack[self.sp as usize] = self.pc;
         self.sp += 1;
@@ -117,40 +120,31 @@ impl CPU {
         self.v[reg_x as usize] = self.v[reg_x as usize] ^ self.v[reg_y as usize];
     }
 
-    // add Vx and Vy.
-    // if the result is greater than 8 bits (i.e., > 255,) VF is set to 1, otherwise 0.
-    // only the lowest 8 bits of the result are kept, and stored in Vx.
     fn add2(&mut self, reg_x: u8, reg_y: u8) {
         let (result, carry) = self.v[reg_x as usize].overflowing_add(self.v[reg_y as usize]);
         self.v[reg_x as usize] = result;
         self.v[0xF] = if carry { 1 } else { 0 };
     }
 
-    // if Vx > Vy, then VF is set to 1, otherwise 0.
-    // Then Vy is subtracted from Vx, and the results stored in Vx.
     fn sub(&mut self, reg_x: u8, reg_y: u8) {
         let (result, borrow) = self.v[reg_x as usize].overflowing_sub(self.v[reg_y as usize]);
         self.v[reg_x as usize] = result;
         self.v[0xF] = if borrow { 0 } else { 1 };
     }
 
-    // if the least-significant bit of Vx is 1, then VF is set to 1, otherwise 0.
-    // then Vx is divided by 2.
+    // todo!
     fn shr(&mut self, reg_x: u8, reg_y: u8) {
         self.v[0xF] = self.v[reg_x as usize] & 1;
         self.v[reg_x as usize] = self.v[reg_x as usize] >> 1;
     }
 
-    // if Vy > Vx, then VF is set to 1, otherwise 0.
-    // then Vx is subtracted from Vy, and the results stored in Vx.
     fn subn(&mut self, reg_x: u8, reg_y: u8) {
         let (result, borrow) = self.v[reg_y as usize].overflowing_sub(self.v[reg_x as usize]);
         self.v[reg_x as usize] = result;
         self.v[0xF] = if borrow { 0 } else { 1 };
     }
 
-    // if the most-significant bit of Vx is 1, then VF is set to 1, otherwise to 0.
-    // then Vx is multiplied by 2.
+    // todo!
     fn shl(&mut self, reg_x: u8, reg_y: u8) {
         self.v[0xF] = if let 0b10000000 = self.v[reg_x as usize] & 0b10000000 {
             1
@@ -160,7 +154,6 @@ impl CPU {
         self.v[reg_x as usize] = self.v[reg_x as usize] << 1;
     }
 
-    // if Vx != Vy, the program counter is increased by 2.
     fn sne(&mut self, reg_x: u8, reg_y: u8) {
         if self.v[reg_x as usize] != self.v[reg_y as usize] {
             self.pc += 2;
@@ -169,6 +162,27 @@ impl CPU {
 
     fn lda(&mut self, address: u16) {
         self.i = address;
+    }
+
+    fn jpv(&mut self, address: u16) {
+        self.pc = self.v[0] as u16 + address;
+    }
+
+    fn rnd(&mut self, reg_x: u8, byte: u8) {
+        let number = rand::thread_rng().gen_range(0..=255);
+        self.v[reg_x as usize] = byte & number;
+    }
+
+    fn drw(&mut self, reg_x: u8, reg_y: u8, n: u8) {
+        todo!()
+    }
+
+    fn skp(&mut self, reg_x: u8) {
+        todo!()
+    }
+
+    fn sknp(&mut self, reg_x: u8) {
+        todo!()
     }
 
     fn ldi(&mut self, reg: u8, memory: &mut Memory) {
