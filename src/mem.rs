@@ -1,7 +1,7 @@
-use std::{fs, io};
+use crate::op::OpCode;
 use std::io::Read;
 use std::path::Path;
-use crate::op::OpCode;
+use std::{fs, io};
 
 /// The chip-8 has a 4KB memory
 const MEMORY_SIZE: usize = 4096;
@@ -9,14 +9,14 @@ const MEMORY_SIZE: usize = 4096;
 /// chip-8 memory
 pub struct Memory {
     // use an u8 array to emulate chip8 memory
-    mem: [u8; MEMORY_SIZE]
+    mem: [u8; MEMORY_SIZE],
 }
 
 impl Memory {
     /// create the memory instance
     pub fn new() -> Memory {
         Memory {
-            mem: [0; MEMORY_SIZE]
+            mem: [0; MEMORY_SIZE],
         }
     }
 
@@ -32,16 +32,22 @@ impl Memory {
         // most chip-8 programs start at location 0x200
         // see http://devernay.free.fr/hacks/chip8/C8TECH10.HTM#2.1 for details
         for (index, &data) in rom_data.iter().enumerate() {
-            self.mem[0x200 + index] = data;
+            let address = index + 0x200;
+            self.write(address, data);
         }
 
         Ok(())
     }
 
+    /// read 1 byte data at address
+    pub fn read8(&self, address: usize) -> u8 {
+        self.mem[address]
+    }
+
     /// read 2 bytes data at program counter
     pub fn read16(&self, pc: u16) -> OpCode {
         let pc = pc as usize;
-        OpCode::new((self.mem[pc] as u16) << 8 | self.mem[pc+1] as u16)
+        OpCode::new((self.mem[pc] as u16) << 8 | self.mem[pc + 1] as u16)
     }
 
     /// write data to memory
