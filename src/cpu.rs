@@ -3,6 +3,7 @@ use crate::keyboard::KeyBoard;
 use crate::memory::Memory;
 use crate::operation::Op;
 use rand::Rng;
+use crate::settings::Settings;
 
 
 /// chip-8 cpu
@@ -31,7 +32,7 @@ impl CPU {
     }
 
     /// fetch, decode and execute instruction
-    pub fn cycle(&mut self, memory: &mut Memory, display: &mut Display, keyboard: &mut KeyBoard) {
+    pub fn cycle(&mut self, memory: &mut Memory, display: &mut Display, keyboard: &mut KeyBoard, settings: &Settings) {
         // read 2 bytes opcode at program counter
         let opcode = memory.read16(self.pc);
 
@@ -60,25 +61,25 @@ impl CPU {
             Op::XOR { reg_x, reg_y } => self.xor(reg_x, reg_y),
             Op::ADD2 { reg_x, reg_y } => self.add2(reg_x, reg_y),
             Op::SUB { reg_x, reg_y } => self.sub(reg_x, reg_y),
-            Op::SHR { reg_x, reg_y } => self.shr(reg_x, reg_y),
+            Op::SHR { reg_x, reg_y } => self.shr(reg_x, reg_y, settings),
             Op::SUBN { reg_x, reg_y } => self.subn(reg_x, reg_y),
-            Op::SHL { reg_x, reg_y } => self.shl(reg_x, reg_y),
+            Op::SHL { reg_x, reg_y } => self.shl(reg_x, reg_y, settings),
             Op::SNE { reg_x, reg_y } => self.sne(reg_x, reg_y),
             Op::LDA { address } => self.lda(address),
             Op::JPV { address } => self.jpv(address),
             Op::RND { reg, byte } => self.rnd(reg, byte),
-            Op::DRW { reg_x, reg_y, n } => self.drw(reg_x, reg_y, n, memory, display),
+            Op::DRW { reg_x, reg_y, n } => self.drw(reg_x, reg_y, n, memory, display, settings),
             Op::SKP { reg } => self.skp(reg, keyboard),
             Op::SKNP { reg } => self.sknp(reg, keyboard),
             Op::LDT { reg } => self.ldt(reg),
             Op::LDK { reg } => self.ldk(reg, keyboard),
             Op::LDF { reg } => self.ldf(reg),
             Op::LDS { reg } => self.lds(reg),
-            Op::ADDI { reg } => self.addi(reg),
+            Op::ADDI { reg } => self.addi(reg, settings),
             Op::LDX { reg } => self.ldx(reg),
             Op::LDB { reg } => self.ldb(reg, memory),
-            Op::LDI { reg } => self.ldi(reg, memory),
-            Op::LDJ { reg } => self.ldj(reg, memory),
+            Op::LDI { reg } => self.ldi(reg, memory, settings),
+            Op::LDJ { reg } => self.ldj(reg, memory, settings),
         }
     }
 
@@ -157,10 +158,12 @@ impl CPU {
         self.v[0xF] = if borrow { 0 } else { 1 };
     }
 
-    // todo!
-    fn shr(&mut self, reg_x: u8, reg_y: u8) {
-        self.v[0xF] = self.v[reg_x as usize] & 1;
-        self.v[reg_x as usize] = self.v[reg_x as usize] >> 1;
+    fn shr(&mut self, reg_x: u8, mut reg_y: u8, settings: &Settings) {
+        if settings.shift_vx_ignore_vy {
+            reg_y = reg_x;
+        }
+        self.v[0xF] = self.v[reg_y as usize] & 1;
+        self.v[reg_x as usize] = self.v[reg_y as usize] >> 1;
     }
 
     fn subn(&mut self, reg_x: u8, reg_y: u8) {
@@ -169,14 +172,12 @@ impl CPU {
         self.v[0xF] = if borrow { 0 } else { 1 };
     }
 
-    // todo!
-    fn shl(&mut self, reg_x: u8, reg_y: u8) {
-        self.v[0xF] = if let 0b10000000 = self.v[reg_x as usize] & 0b10000000 {
-            1
-        } else {
-            0
-        };
-        self.v[reg_x as usize] = self.v[reg_x as usize] << 1;
+    fn shl(&mut self, reg_x: u8, mut reg_y: u8, settings: &Settings) {
+        if settings.shift_vx_ignore_vy {
+            reg_y = reg_x;
+        }
+        self.v[0xF] = (self.v[reg_y as usize] >> 7) & 1;
+        self.v[reg_x as usize] = self.v[reg_y as usize] << 1;
     }
 
     fn sne(&mut self, reg_x: u8, reg_y: u8) {
@@ -197,8 +198,7 @@ impl CPU {
         self.v[reg as usize] = byte & rand::thread_rng().gen_range(0..=255);
     }
 
-    // todo!
-    fn drw(&mut self, reg_x: u8, reg_y: u8, n: u8, memory: &mut Memory, display: &mut Display) {
+    fn drw(&mut self, reg_x: u8, reg_y: u8, n: u8, memory: &mut Memory, display: &mut Display, settings: &Settings) {
         let origin_x = self.v[reg_x as usize] as usize; // origin x coordinate
         let origin_y = self.v[reg_y as usize] as usize; // origin y coordinate
         let n = n as usize; // read n bytes
@@ -208,7 +208,7 @@ impl CPU {
         // offset on the y coordinate
         for y_offset in 0..n {
             let y = origin_y + y_offset; // y coordinate
-            if y >= Display::display_height() {
+            if !settings.vertical_wrap && y >= Display::display_height() {
                 break;
             }
             // read one byte
@@ -261,10 +261,13 @@ impl CPU {
         self.st = self.v[reg as usize];
     }
 
-    // todo!
-    fn addi(&mut self, reg: u8) {
-        let (result, _) = self.i.overflowing_add(self.v[reg as usize] as u16);
+    fn addi(&mut self, reg: u8, settings: &Settings) {
+        let (result, flag) = self.i.overflowing_add(self.v[reg as usize] as u16);
         self.i = result;
+
+        if settings.set_vf_when_overflow {
+            self.v[0xF] = if flag { 1 } else { 0 };
+        }
     }
 
     fn ldx(&mut self, reg: u8) {
@@ -280,19 +283,25 @@ impl CPU {
         });
     }
 
-    // todo!
-    fn ldi(&mut self, reg: u8, memory: &mut Memory) {
+    fn ldi(&mut self, reg: u8, memory: &mut Memory, settings: &Settings) {
         (0..=reg).into_iter().for_each(|i| {
             let address = self.i + i as u16;
             memory.write(address, self.v[i as usize])
         });
+
+        if settings.increment_i_register {
+            self.i += reg as u16 + 1;
+        }
     }
 
-    // todo!
-    fn ldj(&mut self, reg: u8, memory: &Memory) {
+    fn ldj(&mut self, reg: u8, memory: &Memory, settings: &Settings) {
         (0..=reg).into_iter().for_each(|i| {
             let address = self.i + i as u16;
             self.v[i as usize] = memory.read8(address);
         });
+
+        if settings.increment_i_register {
+            self.i += reg as u16 + 1;
+        }
     }
 }
