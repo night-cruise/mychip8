@@ -1,6 +1,9 @@
-use std::path::Path;
 use crate::cpu::CPU;
-use crate::mem::Memory;
+use crate::display::Display;
+use crate::keyboard::KeyBoard;
+use crate::memory::Memory;
+use std::path::Path;
+use crate::settings::Settings;
 
 const GAME_FILE: &str = "c8games/BLINKY";
 
@@ -13,9 +16,17 @@ impl CHIP8 {
         let mut memory = Memory::new();
         memory.load_rom(Path::new(GAME_FILE))?;
 
+        let mut display = Display::new();
+
+        let mut keyboard = KeyBoard::new();
+
         let mut cpu = CPU::new();
 
-        cpu.cycle(&mut memory);
+        let settings = Settings::new();
+
+        for _i in 0..500 {
+            cpu.cycle(&mut memory, &mut display, &mut keyboard, &settings);
+        }
 
         Ok(())
     }
