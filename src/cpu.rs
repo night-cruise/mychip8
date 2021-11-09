@@ -111,15 +111,11 @@ impl CPU {
     }
 
     fn sne2(&mut self, reg: u8, byte: u8) {
-        if self.v[reg as usize] != byte {
-            self.pc += 2;
-        }
+        self.pc += if self.v[reg as usize] != byte { 2 } else { 0 };
     }
 
     fn sev(&mut self, reg_x: u8, reg_y: u8) {
-        if self.v[reg_x as usize] == self.v[reg_y as usize] {
-            self.pc += 2;
-        }
+        self.pc += if self.v[reg_x as usize] == self.v[reg_y as usize] { 2 } else { 0 };
     }
 
     fn ld(&mut self, reg: u8, byte: u8) {
@@ -135,15 +131,15 @@ impl CPU {
     }
 
     fn or(&mut self, reg_x: u8, reg_y: u8) {
-        self.v[reg_x as usize] = self.v[reg_x as usize] | self.v[reg_y as usize];
+        self.v[reg_x as usize] |= self.v[reg_y as usize];
     }
 
     fn and(&mut self, reg_x: u8, reg_y: u8) {
-        self.v[reg_x as usize] = self.v[reg_x as usize] & self.v[reg_y as usize];
+        self.v[reg_x as usize] &= self.v[reg_y as usize];
     }
 
     fn xor(&mut self, reg_x: u8, reg_y: u8) {
-        self.v[reg_x as usize] = self.v[reg_x as usize] ^ self.v[reg_y as usize];
+        self.v[reg_x as usize] ^= self.v[reg_y as usize];
     }
 
     fn add2(&mut self, reg_x: u8, reg_y: u8) {
@@ -181,9 +177,7 @@ impl CPU {
     }
 
     fn sne(&mut self, reg_x: u8, reg_y: u8) {
-        if self.v[reg_x as usize] != self.v[reg_y as usize] {
-            self.pc += 2;
-        }
+        self.pc += if self.v[reg_x as usize] != self.v[reg_y as usize] { 2 } else { 0 };
     }
 
     fn lda(&mut self, address: u16) {
