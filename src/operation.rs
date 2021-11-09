@@ -23,6 +23,8 @@ pub enum Op {
     JP { address: u16 },       // opcode: 1nnn, set PC to nnn
     CALL { address: u16 },     // opcode: 2nnn, call subroutine at nnn
     SE { reg: u8, byte: u8 },  // opcode: 3xkk, skip next instruction if Vx = kk
+    SNE2 { reg: u8, byte: u8}, // opcode: 4xkk, skip next instruction if Vx != kk
+    SEV {reg_x: u8, reg_y: u8}, // opcode: 5xy0, skip next instruction if Vx = Vy
     LD { reg: u8, byte: u8 },  // opcode: 6xkk, set Vx to kk
     ADD { reg: u8, byte: u8 }, // opcode: 7xkk, add kk to Vx
     LDR { reg_x: u8, reg_y: u8 }, // opcode: 8xy0, set Vx to Vy
@@ -65,6 +67,8 @@ impl Op {
             0x1000 => Op::jp(opcode),
             0x2000 => Op::call(opcode),
             0x3000 => Op::se(opcode),
+            0x4000 => Op::sne2(opcode),
+            0x5000 => Op::sev(opcode),
             0x6000 => Op::ld(opcode),
             0x7000 => Op::add(opcode),
             0x8000 => match opcode & 0x000F {
@@ -135,6 +139,20 @@ impl Op {
         Op::SE {
             reg: ((opcode & 0x0F00) >> 8) as u8,
             byte: (opcode & 0x00FF) as u8,
+        }
+    }
+
+    fn sne2(opcode: u16) -> Op {
+        Op::SNE2 {
+            reg: ((opcode & 0x0F00) >> 8) as u8,
+            byte: (opcode & 0x00FF) as u8,
+        }
+    }
+
+    fn sev(opcode: u16) -> Op {
+        Op::SEV {
+            reg_x: ((opcode & 0x0F00) >> 8) as u8,
+            reg_y: ((opcode & 0x00F0) >> 4) as u8,
         }
     }
 

@@ -1,7 +1,11 @@
-use crate::mem::Memory;
-use crate::op::Op;
+use crate::display::Display;
+use crate::keyboard::KeyBoard;
+use crate::memory::Memory;
+use crate::operation::Op;
 use rand::Rng;
 
+
+/// chip-8 cpu
 pub struct CPU {
     v: [u8; 16], // general purpose 8-bit registers(from V0 to VF, and the VF is used as a flag by some instructions)
     i: u16,      // generally used to store memory address
@@ -27,29 +31,27 @@ impl CPU {
     }
 
     /// fetch, decode and execute instruction
-    pub fn cycle(&mut self, memory: &mut Memory) {
+    pub fn cycle(&mut self, memory: &mut Memory, display: &mut Display, keyboard: &mut KeyBoard) {
         // read 2 bytes opcode at program counter
         let opcode = memory.read16(self.pc);
 
         // increment the program counter
+        let pc = self.pc; // for print
         self.pc += 2;
 
         // decode the instruction
         let op = Op::decode(&opcode);
 
-        println!(
-            "{:04X}: {:04X}  {:?}",
-            0x200 + self.pc,
-            opcode.get_opcode(),
-            op
-        );
+        println!("{:04X}: {:04X}  {:?}", pc, opcode.get_opcode(), op);
         match op {
             Op::SYS { address } => self.sys(address),
-            Op::CLS => self.cls(),
+            Op::CLS => self.cls(display),
             Op::RET => self.ret(),
             Op::JP { address } => self.jp(address),
             Op::CALL { address } => self.call(address),
             Op::SE { reg, byte } => self.se(reg, byte),
+            Op::SNE2 {reg, byte} => self.sne2(reg, byte),
+            Op::SEV {reg_x, reg_y} => self.sev(reg_x,reg_y),
             Op::LD { reg, byte } => self.ld(reg, byte),
             Op::ADD { reg, byte } => self.add(reg, byte),
             Op::LDR { reg_x, reg_y } => self.ldr(reg_x, reg_y),
@@ -65,16 +67,16 @@ impl CPU {
             Op::LDA { address } => self.lda(address),
             Op::JPV { address } => self.jpv(address),
             Op::RND { reg, byte } => self.rnd(reg, byte),
-            Op::DRW { reg_x, reg_y, n } => self.drw(reg_x, reg_y, n),
-            Op::SKP { reg } => self.skp(reg),
-            Op::SKNP { reg } => self.sknp(reg),
+            Op::DRW { reg_x, reg_y, n } => self.drw(reg_x, reg_y, n, memory, display),
+            Op::SKP { reg } => self.skp(reg, keyboard),
+            Op::SKNP { reg } => self.sknp(reg, keyboard),
             Op::LDT { reg } => self.ldt(reg),
-            Op::LDK { reg } => self.ldk(reg),
+            Op::LDK { reg } => self.ldk(reg, keyboard),
             Op::LDF { reg } => self.ldf(reg),
             Op::LDS { reg } => self.lds(reg),
             Op::ADDI { reg } => self.addi(reg),
             Op::LDX { reg } => self.ldx(reg),
-            Op::LDB { reg } => self.ldb(reg),
+            Op::LDB { reg } => self.ldb(reg, memory),
             Op::LDI { reg } => self.ldi(reg, memory),
             Op::LDJ { reg } => self.ldj(reg, memory),
         }
@@ -84,8 +86,8 @@ impl CPU {
         // doesn't need to do this
     }
 
-    fn cls(&mut self) {
-        todo!()
+    fn cls(&mut self, display: &mut Display) {
+        display.clear();
     }
 
     fn ret(&mut self) {
@@ -104,7 +106,17 @@ impl CPU {
     }
 
     fn se(&mut self, reg: u8, byte: u8) {
-        if self.v[reg as usize] == byte {
+        self.pc += if self.v[reg as usize] == byte { 2 } else { 0 };
+    }
+
+    fn sne2(&mut self, reg: u8, byte: u8) {
+        if self.v[reg as usize] != byte {
+            self.pc += 2;
+        }
+    }
+
+    fn sev(&mut self, reg_x: u8, reg_y: u8) {
+        if self.v[reg_x as usize] == self.v[reg_y as usize] {
             self.pc += 2;
         }
     }
@@ -182,28 +194,63 @@ impl CPU {
     }
 
     fn rnd(&mut self, reg: u8, byte: u8) {
-        let number = rand::thread_rng().gen_range(0..=255);
-        self.v[reg as usize] = byte & number;
+        self.v[reg as usize] = byte & rand::thread_rng().gen_range(0..=255);
     }
 
-    fn drw(&mut self, reg_x: u8, reg_y: u8, n: u8) {
-        todo!()
+    // todo!
+    fn drw(&mut self, reg_x: u8, reg_y: u8, n: u8, memory: &mut Memory, display: &mut Display) {
+        let origin_x = self.v[reg_x as usize] as usize; // origin x coordinate
+        let origin_y = self.v[reg_y as usize] as usize; // origin y coordinate
+        let n = n as usize; // read n bytes
+
+        let mut pixel_erase = false;
+
+        // offset on the y coordinate
+        for y_offset in 0..n {
+            let y = origin_y + y_offset; // y coordinate
+            if y >= Display::display_height() {
+                break;
+            }
+            // read one byte
+            let byte = memory.read8(self.i + y_offset as u16);
+
+            // offset on the x coordinate
+            (0..8).into_iter().for_each(|x_offset| {
+                let x = origin_x + x_offset; // x coordinate
+                let pixel = (byte >> (7 - x_offset) & 1) == 1; // get the pixel on the (x, y) coordinate
+                pixel_erase |= display.set_pixel(x, y, pixel);
+            });
+        }
+
+        self.v[0xF] = if pixel_erase { 1 } else { 0 };
     }
 
-    fn skp(&mut self, reg: u8) {
-        todo!()
+    fn skp(&mut self, reg: u8, keyboard: &KeyBoard) {
+        self.pc += if keyboard.check_key(self.v[reg as usize]) {
+            2
+        } else {
+            0
+        };
     }
 
-    fn sknp(&mut self, reg: u8) {
-        todo!()
+    fn sknp(&mut self, reg: u8, keyboard: &KeyBoard) {
+        self.pc += if !keyboard.check_key(self.v[reg as usize]) {
+            2
+        } else {
+            0
+        };
     }
 
     fn ldt(&mut self, reg: u8) {
         self.v[reg as usize] = self.dt;
     }
 
-    fn ldk(&mut self, reg: u8) {
-        todo!()
+    fn ldk(&mut self, reg: u8, keyboard: &mut KeyBoard) {
+        if let Some(key) = keyboard.wait_key_press() {
+            self.v[reg as usize] = key;
+        } else {
+            self.pc -= 2;
+        }
     }
 
     fn ldf(&mut self, reg: u8) {
@@ -214,32 +261,38 @@ impl CPU {
         self.st = self.v[reg as usize];
     }
 
+    // todo!
     fn addi(&mut self, reg: u8) {
         let (result, _) = self.i.overflowing_add(self.v[reg as usize] as u16);
         self.i = result;
     }
 
     fn ldx(&mut self, reg: u8) {
-        todo!()
+        self.i = Memory::sprite_address(self.v[reg as usize]);
     }
 
-    fn ldb(&mut self, reg: u8) {
-        self.v[self.i as usize] = reg / 100 % 10;
-        self.v[self.i as usize + 1] = reg / 10 % 10;
-        self.v[self.i as usize + 2] = reg % 10;
+    fn ldb(&mut self, reg: u8, memory: &mut Memory) {
+        (self.i..self.i + 3).into_iter().for_each(|j| {
+            memory.write(
+                j,
+                self.v[reg as usize] / 10_u8.pow(2 - j as u32) % 10,
+            )
+        });
     }
 
+    // todo!
     fn ldi(&mut self, reg: u8, memory: &mut Memory) {
-        for i in 0..=reg {
-            let address = (self.i + i as u16) as usize;
-            memory.write(address, self.v[i as usize]);
-        }
+        (0..=reg).into_iter().for_each(|i| {
+            let address = self.i + i as u16;
+            memory.write(address, self.v[i as usize])
+        });
     }
 
+    // todo!
     fn ldj(&mut self, reg: u8, memory: &Memory) {
-        for i in 0..=reg {
-            let reg = i as usize;
-            self.v[reg] = memory.read8((self.i as usize) + reg);
-        }
+        (0..=reg).into_iter().for_each(|i| {
+            let address = self.i + i as u16;
+            self.v[i as usize] = memory.read8(address);
+        });
     }
 }
