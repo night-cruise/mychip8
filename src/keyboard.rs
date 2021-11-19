@@ -20,6 +20,11 @@ impl KeyBoard {
         self.keys[key as usize]
     }
 
+    /// set keys
+    // pub fn set_keys(&mut self, keys: [bool; 16]) {
+    //     self.keys = keys;
+    // }
+
     /// wait for a key press
     pub fn wait_key_press(&mut self) -> Option<u8> {
         if self.key_press_wait {
@@ -35,5 +40,23 @@ impl KeyBoard {
             self.key_press_wait = true;
             None
         }
+    }
+
+    /// press the key
+    pub fn press_key(&mut self, key: u8) {
+        if self.key_press_wait {
+            self.key_press = Some(key);
+        }
+        self.keys[key as usize] = true;
+    }
+
+    /// release the key
+    pub fn release_key(&mut self, key: u8) {
+        if let Some(k) = self.key_press {
+            if k == key {
+                self.key_press = None;
+            }
+        }
+        self.keys[key as usize] = false;
     }
 }
