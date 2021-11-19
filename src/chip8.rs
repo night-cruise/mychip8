@@ -10,7 +10,7 @@ use crate::clock::Clock;
 use crate::platform::PlatForm;
 use crate::platform::PlatformEvent;
 
-const GAME_FILE: &str = "c8games/TANK";
+const GAME_FILE: &str = "c8games/TICTAC";
 
 /// the chip-8 interpreter
 pub struct CHIP8;
