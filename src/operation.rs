@@ -33,9 +33,9 @@ pub enum Op {
     XOR { reg_x: u8, reg_y: u8 }, // opcode: 8xy3, set Vx = Vx XOR Vy
     ADD2 { reg_x: u8, reg_y: u8 }, // opcode: 8xy4, set Vx = Vx + Vy, set VF = carry
     SUB { reg_x: u8, reg_y: u8 }, // opcode: 8xy5, set Vx = Vx - Vy, set VF = NOT borrow
-    SHR { reg_x: u8, reg_y: u8 }, // opcode: 8xy6, set Vx = Vx SHR 1 (todo!)
+    SHR { reg_x: u8, reg_y: u8 }, // opcode: 8xy6, set Vx = Vx SHR 1
     SUBN { reg_x: u8, reg_y: u8 }, // opcode: 8xy7, set Vx = Vy - Vx, set VF = NOt borrow
-    SHL { reg_x: u8, reg_y: u8 }, // opcode: 8xyE, set Vx = Vx SHL 1 (todo!)
+    SHL { reg_x: u8, reg_y: u8 }, // opcode: 8xyE, set Vx = Vx SHL 1
     SNE { reg_x: u8, reg_y: u8 }, // opcode: 9xy0, skip next instruction if Vx != Vy
     LDA { address: u16 },     // opcode: Annn, set I to nnn
     JPV { address: u16 },     // opcode: Bnnn, jump to location nnn + V0
