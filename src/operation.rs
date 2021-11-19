@@ -17,15 +17,15 @@ impl OpCode {
 /// opcode type
 #[derive(Debug)]
 pub enum Op {
-    SYS { address: u16 },      // opcode: 0nnn, jump to a machine code routine at nnn
-    CLS,                       // opcode: 00E0, clear the display (todo!)
-    RET,                       // opcode: 00EE, return from a subroutine
-    JP { address: u16 },       // opcode: 1nnn, set PC to nnn
-    CALL { address: u16 },     // opcode: 2nnn, call subroutine at nnn
-    SE { reg: u8, byte: u8 },  // opcode: 3xkk, skip next instruction if Vx = kk
-    SNE2 { reg: u8, byte: u8}, // opcode: 4xkk, skip next instruction if Vx != kk
-    SEV {reg_x: u8, reg_y: u8}, // opcode: 5xy0, skip next instruction if Vx = Vy
-    LD { reg: u8, byte: u8 },  // opcode: 6xkk, set Vx to kk
+    SYS { address: u16 },     // opcode: 0nnn, jump to a machine code routine at nnn
+    CLS,                      // opcode: 00E0, clear the display
+    RET,                      // opcode: 00EE, return from a subroutine
+    JP { address: u16 },      // opcode: 1nnn, set PC to nnn
+    CALL { address: u16 },    // opcode: 2nnn, call subroutine at nnn
+    SE { reg: u8, byte: u8 }, // opcode: 3xkk, skip next instruction if Vx = kk
+    SNE2 { reg: u8, byte: u8 }, // opcode: 4xkk, skip next instruction if Vx != kk
+    SEV { reg_x: u8, reg_y: u8 }, // opcode: 5xy0, skip next instruction if Vx = Vy
+    LD { reg: u8, byte: u8 }, // opcode: 6xkk, set Vx to kk
     ADD { reg: u8, byte: u8 }, // opcode: 7xkk, add kk to Vx
     LDR { reg_x: u8, reg_y: u8 }, // opcode: 8xy0, set Vx to Vy
     OR { reg_x: u8, reg_y: u8 }, // opcode: 8xy1, set Vx = Vx OR Vy
@@ -37,8 +37,8 @@ pub enum Op {
     SUBN { reg_x: u8, reg_y: u8 }, // opcode: 8xy7, set Vx = Vy - Vx, set VF = NOt borrow
     SHL { reg_x: u8, reg_y: u8 }, // opcode: 8xyE, set Vx = Vx SHL 1 (todo!)
     SNE { reg_x: u8, reg_y: u8 }, // opcode: 9xy0, skip next instruction if Vx != Vy
-    LDA { address: u16 },      // opcode: Annn, set I to nnn
-    JPV { address: u16 },      // opcode: Bnnn, jump to location nnn + V0
+    LDA { address: u16 },     // opcode: Annn, set I to nnn
+    JPV { address: u16 },     // opcode: Bnnn, jump to location nnn + V0
     RND { reg: u8, byte: u8 }, // opcode: Cxkk, set Vx = random byte AND kk
     DRW { reg_x: u8, reg_y: u8, n: u8 }, // opcode: Dxyn, display n-byte sprite starting at memory location I at (Vx, Vy), set VF = collision
     SKP { reg: u8 }, // opcode: Ex9E, skip next instruction if key with the value of Vx is pressed
