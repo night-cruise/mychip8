@@ -1,11 +1,16 @@
 use crate::cpu::CPU;
 use crate::display::Display;
 use crate::keyboard::KeyBoard;
+use crate::keymap::KeyMap;
 use crate::memory::Memory;
-use std::path::Path;
 use crate::settings::Settings;
+use std::path::Path;
 
-const GAME_FILE: &str = "c8games/BLINKY";
+use crate::clock::Clock;
+use crate::platform::PlatForm;
+use crate::platform::PlatformEvent;
+
+const GAME_FILE: &str = "c8games/TANK";
 
 /// the chip-8 interpreter
 pub struct CHIP8;
@@ -24,8 +29,49 @@ impl CHIP8 {
 
         let settings = Settings::new();
 
-        for _i in 0..500 {
-            cpu.cycle(&mut memory, &mut display, &mut keyboard, &settings);
+        let keymap = KeyMap::new();
+
+        let mut platform = PlatForm::new("CHIP-8");
+
+        let mut cpu_clock = Clock::new(settings.cpu_freq);
+        let mut dt_clock = Clock::new(settings.delay_timer_freq);
+        let mut st_clock = Clock::new(settings.sound_timer_freq);
+
+        let mut done = false;
+        while !done {
+            match platform.poll_event(&keymap) {
+                PlatformEvent::KeyDown(key) => {
+                    keyboard.press_key(key);
+                }
+                PlatformEvent::KeyUp(key) => {
+                    keyboard.release_key(key)
+                }
+                PlatformEvent::Quit => {
+                    done = true;
+                }
+                PlatformEvent::None => {
+                    if st_clock.tick() {
+                        let beep = cpu.cycle_st();
+                        platform.beep(beep && !settings.mute);
+                    }
+
+                    if dt_clock.tick() {
+                        cpu.cycle_dt();
+                    }
+
+                    if cpu_clock.tick() {
+                        // keyboard.set_keys(platform.keyboard_state(&keymap));
+
+                        cpu.pipeline_operation(&mut memory, &mut display, &mut keyboard, &settings);
+
+                        if display.redraw() {
+                            platform.clear();
+                            display.draw(&mut platform);
+                            platform.present();
+                        }
+                    }
+                }
+            }
         }
 
         Ok(())
