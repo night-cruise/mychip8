@@ -1,7 +1,8 @@
 use crate::operation::OpCode;
+use std::fs::File;
+use std::io;
 use std::io::Read;
 use std::path::Path;
-use std::{fs, io};
 
 /// chip-8 has a 4KB memory
 const MEMORY_SIZE: usize = 4096;
@@ -47,7 +48,7 @@ impl Memory {
             sprite
                 .iter()
                 .enumerate()
-                .for_each(|(j, &byte)| memory[address + j] = byte);
+                .for_each(|(offset, &byte)| memory[address + offset] = byte);
         });
 
         Memory { mem: memory }
@@ -57,7 +58,7 @@ impl Memory {
     pub fn load_rom(&mut self, path: &Path) -> io::Result<()> {
         // read file to u8 vector
         let mut rom_data = vec![];
-        fs::File::open(path)?.read_to_end(&mut rom_data)?;
+        File::open(path)?.read_to_end(&mut rom_data)?;
 
         // chip-8 programs start at location 0x200
         rom_data.iter().enumerate().for_each(|(i, &data)| {
@@ -79,7 +80,9 @@ impl Memory {
 
     /// read 2 bytes data at program counter
     pub fn read16(&self, address: u16) -> OpCode {
-        OpCode::new((self.mem[address as usize] as u16) << 8 | self.mem[(address as usize) + 1] as u16)
+        OpCode::new(
+            (self.mem[address as usize] as u16) << 8 | self.mem[(address as usize) + 1] as u16,
+        )
     }
 
     /// write data to memory
