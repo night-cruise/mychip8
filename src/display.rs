@@ -1,3 +1,5 @@
+use crate::platform::PlatForm;
+
 // the chip-8 uses a 64x32-pixel monochrome display with this format:
 // (0,0)	       (63,0)
 //
@@ -45,5 +47,21 @@ impl Display {
     /// clear the display
     pub fn clear(&mut self) {
         self.pixels = [[false; DISPLAY_HEIGHT]; DISPLAY_WIDTH];
+    }
+
+    /// check whether to redraw
+    pub fn redraw(&self) -> bool {
+        self.redraw
+    }
+
+    pub fn draw(&mut self, platform: &mut PlatForm) {
+        for y in 0..DISPLAY_HEIGHT {
+            for x in 0..DISPLAY_WIDTH {
+                if self.pixels[x][y] {
+                    platform.draw_pixel(x as u8, y as u8)
+                }
+            }
+        }
+        self.redraw = false;
     }
 }
