@@ -2,9 +2,8 @@ use crate::display::Display;
 use crate::keyboard::KeyBoard;
 use crate::memory::Memory;
 use crate::operation::Op;
-use rand::Rng;
 use crate::settings::Settings;
-
+use rand::Rng;
 
 /// chip-8 cpu
 pub struct CPU {
@@ -31,8 +30,27 @@ impl CPU {
         }
     }
 
+    pub fn cycle_dt(&mut self) {
+        if self.dt > 0 {
+            self.dt -= 1;
+        }
+    }
+
+    pub fn cycle_st(&mut self) -> bool {
+        if self.st > 0 {
+            self.st -= 1;
+        }
+        self.st > 0
+    }
+
     /// fetch, decode and execute instruction
-    pub fn cycle(&mut self, memory: &mut Memory, display: &mut Display, keyboard: &mut KeyBoard, settings: &Settings) {
+    pub fn pipeline_operation(
+        &mut self,
+        memory: &mut Memory,
+        display: &mut Display,
+        keyboard: &mut KeyBoard,
+        settings: &Settings,
+    ) {
         // read 2 bytes opcode at program counter
         let opcode = memory.read16(self.pc);
 
@@ -51,8 +69,8 @@ impl CPU {
             Op::JP { address } => self.jp(address),
             Op::CALL { address } => self.call(address),
             Op::SE { reg, byte } => self.se(reg, byte),
-            Op::SNE2 {reg, byte} => self.sne2(reg, byte),
-            Op::SEV {reg_x, reg_y} => self.sev(reg_x,reg_y),
+            Op::SNE2 { reg, byte } => self.sne2(reg, byte),
+            Op::SEV { reg_x, reg_y } => self.sev(reg_x, reg_y),
             Op::LD { reg, byte } => self.ld(reg, byte),
             Op::ADD { reg, byte } => self.add(reg, byte),
             Op::LDR { reg_x, reg_y } => self.ldr(reg_x, reg_y),
@@ -115,7 +133,11 @@ impl CPU {
     }
 
     fn sev(&mut self, reg_x: u8, reg_y: u8) {
-        self.pc += if self.v[reg_x as usize] == self.v[reg_y as usize] { 2 } else { 0 };
+        self.pc += if self.v[reg_x as usize] == self.v[reg_y as usize] {
+            2
+        } else {
+            0
+        };
     }
 
     fn ld(&mut self, reg: u8, byte: u8) {
@@ -123,7 +145,8 @@ impl CPU {
     }
 
     fn add(&mut self, reg: u8, byte: u8) {
-        self.v[reg as usize] += byte;
+        let (result, _) = self.v[reg as usize].overflowing_add(byte);
+        self.v[reg as usize] = result;
     }
 
     fn ldr(&mut self, reg_x: u8, reg_y: u8) {
@@ -177,7 +200,11 @@ impl CPU {
     }
 
     fn sne(&mut self, reg_x: u8, reg_y: u8) {
-        self.pc += if self.v[reg_x as usize] != self.v[reg_y as usize] { 2 } else { 0 };
+        self.pc += if self.v[reg_x as usize] != self.v[reg_y as usize] {
+            2
+        } else {
+            0
+        };
     }
 
     fn lda(&mut self, address: u16) {
@@ -192,17 +219,25 @@ impl CPU {
         self.v[reg as usize] = byte & rand::thread_rng().gen_range(0..=255);
     }
 
-    fn drw(&mut self, reg_x: u8, reg_y: u8, n: u8, memory: &mut Memory, display: &mut Display, settings: &Settings) {
+    fn drw(
+        &mut self,
+        reg_x: u8,
+        reg_y: u8,
+        n: u8,
+        memory: &mut Memory,
+        display: &mut Display,
+        settings: &Settings,
+    ) {
         let origin_x = self.v[reg_x as usize] as usize; // origin x coordinate
         let origin_y = self.v[reg_y as usize] as usize; // origin y coordinate
         let n = n as usize; // read n bytes
 
-        let mut pixel_erase = false;
+        let mut pixel_erased = false;
 
         // offset on the y coordinate
         for y_offset in 0..n {
             let y = origin_y + y_offset; // y coordinate
-            if !settings.vertical_wrap && y >= Display::display_height() {
+            if y >= Display::display_height() && !settings.vertical_wrap {
                 break;
             }
             // read one byte
@@ -212,11 +247,11 @@ impl CPU {
             (0..8).into_iter().for_each(|x_offset| {
                 let x = origin_x + x_offset; // x coordinate
                 let pixel = (byte >> (7 - x_offset) & 1) == 1; // get the pixel on the (x, y) coordinate
-                pixel_erase |= display.set_pixel(x, y, pixel);
+                pixel_erased |= display.set_pixel(x, y, pixel);
             });
         }
 
-        self.v[0xF] = if pixel_erase { 1 } else { 0 };
+        self.v[0xF] = if pixel_erased { 1 } else { 0 };
     }
 
     fn skp(&mut self, reg: u8, keyboard: &KeyBoard) {
@@ -269,12 +304,9 @@ impl CPU {
     }
 
     fn ldb(&mut self, reg: u8, memory: &mut Memory) {
-        (self.i..self.i + 3).into_iter().for_each(|j| {
-            memory.write(
-                j,
-                self.v[reg as usize] / 10_u8.pow(2 - j as u32) % 10,
-            )
-        });
+        memory.write(self.i,      self.v[reg as usize] / 100);
+        memory.write(self.i + 1, (self.v[reg as usize] / 10) % 10);
+        memory.write(self.i + 2,  self.v[reg as usize] % 10)
     }
 
     fn ldi(&mut self, reg: u8, memory: &mut Memory, settings: &Settings) {
