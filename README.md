@@ -14,6 +14,12 @@ A CHIP-8 game console emulator implemented with rust.
 
 
 
+## Game Source
+
+* https://www.zophar.net/pdroms/chip8.html
+
+
+
 ## References
 
 * https://blog.wjdevschool.com/blog/video-game-console-emulator/
