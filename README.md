@@ -1,7 +1,7 @@
 # mychip8
 A CHIP-8 game console emulator implemented with rust.
 
-![TICTAC](C:\code\projects\mychip8\TICTAC.png)
+![TICTAC](TICTAC.png)
 
 
 
