@@ -129,28 +129,22 @@ impl PlatForm {
                     keycode: Some(keycode),
                     ..
                 } => {
-                    let mut result = PlatformEvent::None;
-                    for key in 0..0xF {
-                        if keycode == keymap.keycode(key) {
-                            result = PlatformEvent::KeyDown(key);
-                            break;
-                        }
+                    if let Some(key) = keymap.keycode(keycode) {
+                        PlatformEvent::KeyDown(key)
+                    } else {
+                        PlatformEvent::None
                     }
-                    result
                 }
 
                 Event::KeyUp {
                     keycode: Some(keycode),
                     ..
                 } => {
-                    let mut result = PlatformEvent::None;
-                    for key in 0..0xF {
-                        if keycode == keymap.keycode(key) {
-                            result = PlatformEvent::KeyUp(key);
-                            break;
-                        }
+                    if let Some(key) = keymap.keycode(keycode) {
+                        PlatformEvent::KeyDown(key)
+                    } else {
+                        PlatformEvent::None
                     }
-                    result
                 }
 
                 Event::Quit { .. } => PlatformEvent::Quit,

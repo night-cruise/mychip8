@@ -16,25 +16,25 @@ impl KeyMap {
     }
 
     /// process keyboard mapping
-    pub fn keycode(&self, key: u8) -> Keycode {
+    pub fn keycode(&self, key: Keycode) -> Option<u8> {
         match key {
-            0x1 => Keycode::Num1,
-            0x2 => Keycode::Num2,
-            0x3 => Keycode::Num3,
-            0xC => Keycode::Num4,
-            0x4 => Keycode::Q,
-            0x5 => Keycode::W,
-            0x6 => Keycode::E,
-            0xD => Keycode::R,
-            0x7 => Keycode::A,
-            0x8 => Keycode::S,
-            0x9 => Keycode::D,
-            0xE => Keycode::F,
-            0xA => Keycode::Z,
-            0x0 => Keycode::X,
-            0xB => Keycode::C,
-            0xF => Keycode::V,
-            _ => panic!("key out of range"),
+            Keycode::Num1 => Some(0x1),
+            Keycode::Num2 => Some(0x2),
+            Keycode::Num3 => Some(0x3),
+            Keycode::Num4 => Some(0xC),
+            Keycode::Q => Some(0x4),
+            Keycode::W => Some(0x5),
+            Keycode::E => Some(0x6),
+            Keycode::R => Some(0xD),
+            Keycode::A => Some(0x7),
+            Keycode::S => Some(0x8),
+            Keycode::D => Some(0x9),
+            Keycode::F => Some(0xE),
+            Keycode::Z => Some(0xA),
+            Keycode::X => Some(0x0),
+            Keycode::C => Some(0xB),
+            Keycode::V => Some(0xF),
+            _ => None,
         }
     }
 }
