@@ -1,7 +1,8 @@
+use crate::error::BuildPlatformError;
 use crate::keymap::KeyMap;
 use sdl2::audio::{AudioCallback, AudioDevice, AudioSpecDesired};
 use sdl2::event::Event;
-use sdl2::keyboard::{Keycode, Scancode};
+use sdl2::keyboard::Keycode;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::WindowCanvas;
@@ -11,33 +12,40 @@ const DISPLAY_W: u32 = 64;
 const DISPLAY_H: u32 = 32;
 const DISPLAY_SCALE: u32 = 20;
 
+/// platform event
 pub enum PlatformEvent {
-    KeyDown(u8),
-    KeyUp(u8),
-    Quit,
-    None,
+    KeyDown(u8), // represent the event of pressing a key
+    KeyUp(u8),   // represent the event of releasing a key
+    Quit,        // quit event
+    None,        // nothing happened
 }
 
+/// platform type
 pub struct PlatForm {
-    canvas: WindowCanvas,
-    device: AudioDevice<SquareWave>,
-    event_pump: EventPump,
+    canvas: WindowCanvas,            // used to draw on the screen
+    device: AudioDevice<SquareWave>, // used to handle the audio device
+    event_pump: EventPump,           // used to listen for event
 }
 
 impl PlatForm {
-    pub fn new(name: &str) -> PlatForm {
+    /// create a platform instance
+    pub fn new(name: &str) -> Result<PlatForm, BuildPlatformError> {
         let w = DISPLAY_W * DISPLAY_SCALE;
         let h = DISPLAY_H * DISPLAY_SCALE;
 
-        let sdl_context = sdl2::init().unwrap();
-        let video_subsystem = sdl_context.video().unwrap();
-        let audio_subsystem = sdl_context.audio().unwrap();
+        let sdl_context = sdl2::init().map_err(BuildPlatformError::SdlContextError)?;
+        let video_subsystem = sdl_context
+            .video()
+            .map_err(BuildPlatformError::VideoSubsystemError)?;
+        let audio_subsystem = sdl_context
+            .audio()
+            .map_err(BuildPlatformError::AudioSubsystemError)?;
 
         let window = video_subsystem
             .window(name, w, h)
             .position_centered()
             .build()
-            .unwrap();
+            .map_err(BuildPlatformError::WindowError)?;
 
         let desired_spec = AudioSpecDesired {
             freq: Some(523),
@@ -54,32 +62,25 @@ impl PlatForm {
                     volume: 0.25,
                 }
             })
-            .unwrap();
+            .map_err(BuildPlatformError::AudioDeviceError)?;
 
-        let canvas = window.into_canvas().build().unwrap();
+        let canvas = window
+            .into_canvas()
+            .build()
+            .map_err(BuildPlatformError::WindowCanvasError)?;
 
-        let event_pump = sdl_context.event_pump().unwrap();
+        let event_pump = sdl_context
+            .event_pump()
+            .map_err(BuildPlatformError::EventPumpError)?;
 
-        PlatForm {
+        Ok(PlatForm {
             canvas,
             device,
             event_pump,
-        }
+        })
     }
 
-    pub fn keyboard_state(&mut self, keymap: &KeyMap) -> [bool; 16] {
-        let state = self.event_pump.keyboard_state();
-
-        let mut push_keys = [false; 16];
-        for key in 0..0xF {
-            if state.is_scancode_pressed(Scancode::from_keycode(keymap.keycode(key)).unwrap()) {
-                push_keys[key as usize] = true;
-            }
-        }
-
-        push_keys
-    }
-
+    /// resume or pause the audio device
     pub fn beep(&mut self, beep: bool) {
         if beep {
             self.device.resume();
@@ -88,29 +89,34 @@ impl PlatForm {
         }
     }
 
+    /// clear all pixels on the screen
     pub fn clear(&mut self) {
         self.canvas
             .set_draw_color(Color::RGBA(0x19, 0x14, 0x28, 0xFF));
         self.canvas.clear();
     }
 
+    /// clear the current rendering target with the drawing color
     pub fn present(&mut self) {
         self.canvas.present();
     }
 
-    pub fn draw_pixel(&mut self, x: u8, y: u8) {
+    /// update the screen with any rendering performed since the previous call
+    pub fn draw_pixel(&mut self, x: u8, y: u8) -> Result<(), String> {
         self.canvas
             .set_draw_color(Color::RGBA(0xC8, 0xC8, 0xFF, 0xFF));
 
         let rect = Rect::new(
             DISPLAY_SCALE as i32 * x as i32,
             DISPLAY_SCALE as i32 * y as i32,
-            DISPLAY_SCALE * 1,
-            DISPLAY_SCALE * 1,
+            DISPLAY_SCALE,
+            DISPLAY_SCALE,
         );
-        self.canvas.fill_rect(rect).unwrap();
+        self.canvas.fill_rect(rect)?;
+        Ok(())
     }
 
+    /// listen for events(KeyDown, KeyUp, Quit, None)
     pub fn poll_event(&mut self, keymap: &KeyMap) -> PlatformEvent {
         if let Some(event) = self.event_pump.poll_event() {
             match event {
@@ -133,7 +139,10 @@ impl PlatForm {
                     result
                 }
 
-                Event::KeyUp {keycode: Some(keycode), ..} => {
+                Event::KeyUp {
+                    keycode: Some(keycode),
+                    ..
+                } => {
                     let mut result = PlatformEvent::None;
                     for key in 0..0xF {
                         if keycode == keymap.keycode(key) {
