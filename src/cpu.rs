@@ -6,7 +6,7 @@ use crate::settings::Settings;
 use rand::Rng;
 
 /// chip-8 cpu
-pub struct CPU {
+pub struct Cpu {
     v: [u8; 16], // general purpose 8-bit registers(from V0 to VF, and the VF is used as a flag by some instructions)
     i: u16,      // generally used to store memory address
     dt: u8,      // delay timer
@@ -16,10 +16,10 @@ pub struct CPU {
     stack: [u16; 16], // stack is an array of 16 16-bit values, used to store the address that the interpreter returns to when finished with a subroutine
 }
 
-impl CPU {
+impl Cpu {
     /// create the cpu instance
-    pub fn new() -> CPU {
-        CPU {
+    pub fn new() -> Cpu {
+        Cpu {
             v: [0; 16],
             i: 0,
             dt: 0,
@@ -304,9 +304,9 @@ impl CPU {
     }
 
     fn ldb(&mut self, reg: u8, memory: &mut Memory) {
-        memory.write(self.i,      self.v[reg as usize] / 100);
+        memory.write(self.i, self.v[reg as usize] / 100);
         memory.write(self.i + 1, (self.v[reg as usize] / 10) % 10);
-        memory.write(self.i + 2,  self.v[reg as usize] % 10)
+        memory.write(self.i + 2, self.v[reg as usize] % 10)
     }
 
     fn ldi(&mut self, reg: u8, memory: &mut Memory, settings: &Settings) {
