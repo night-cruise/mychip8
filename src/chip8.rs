@@ -1,14 +1,12 @@
-use crate::cpu::CPU;
+use crate::clock::Clock;
+use crate::cpu::Cpu;
 use crate::display::Display;
 use crate::keyboard::KeyBoard;
 use crate::keymap::KeyMap;
 use crate::memory::Memory;
+use crate::platform::{PlatForm, PlatformEvent};
 use crate::settings::Settings;
 use std::path::Path;
-
-use crate::clock::Clock;
-use crate::platform::PlatForm;
-use crate::platform::PlatformEvent;
 
 const GAME_FILE: &str = "c8games/TICTAC";
 
@@ -25,13 +23,13 @@ impl CHIP8 {
 
         let mut keyboard = KeyBoard::new();
 
-        let mut cpu = CPU::new();
+        let mut cpu = Cpu::new();
 
         let settings = Settings::new();
 
         let keymap = KeyMap::new();
 
-        let mut platform = PlatForm::new("CHIP-8");
+        let mut platform = PlatForm::new("CHIP-8")?;
 
         let mut cpu_clock = Clock::new(settings.cpu_freq);
         let mut dt_clock = Clock::new(settings.delay_timer_freq);
@@ -43,9 +41,7 @@ impl CHIP8 {
                 PlatformEvent::KeyDown(key) => {
                     keyboard.press_key(key);
                 }
-                PlatformEvent::KeyUp(key) => {
-                    keyboard.release_key(key)
-                }
+                PlatformEvent::KeyUp(key) => keyboard.release_key(key),
                 PlatformEvent::Quit => {
                     done = true;
                 }
@@ -60,13 +56,11 @@ impl CHIP8 {
                     }
 
                     if cpu_clock.tick() {
-                        // keyboard.set_keys(platform.keyboard_state(&keymap));
-
                         cpu.pipeline_operation(&mut memory, &mut display, &mut keyboard, &settings);
 
                         if display.redraw() {
                             platform.clear();
-                            display.draw(&mut platform);
+                            display.draw(&mut platform)?;
                             platform.present();
                         }
                     }

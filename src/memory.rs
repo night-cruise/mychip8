@@ -1,7 +1,6 @@
 use crate::operation::OpCode;
 use std::fs::File;
-use std::io;
-use std::io::Read;
+use std::io::{self, Read};
 use std::path::Path;
 
 /// chip-8 has a 4KB memory
