@@ -54,14 +54,15 @@ impl Display {
         self.redraw
     }
 
-    pub fn draw(&mut self, platform: &mut PlatForm) {
+    pub fn draw(&mut self, platform: &mut PlatForm) -> Result<(), String> {
         for y in 0..DISPLAY_HEIGHT {
             for x in 0..DISPLAY_WIDTH {
                 if self.pixels[x][y] {
-                    platform.draw_pixel(x as u8, y as u8)
+                    platform.draw_pixel(x as u8, y as u8)?
                 }
             }
         }
         self.redraw = false;
+        Ok(())
     }
 }
