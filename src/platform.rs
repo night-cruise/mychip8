@@ -141,7 +141,7 @@ impl PlatForm {
                     ..
                 } => {
                     if let Some(key) = keymap.keycode(keycode) {
-                        PlatformEvent::KeyDown(key)
+                        PlatformEvent::KeyUp(key)
                     } else {
                         PlatformEvent::None
                     }
