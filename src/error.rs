@@ -25,7 +25,9 @@ impl Display for BuildPlatformError {
             BuildPlatformError::AudioSubsystemError(e) => {
                 write!(f, "Build audio subsystem failed, {}", e)
             }
-            BuildPlatformError::WindowError(e) => write!(f, "Build window failed, {}", e),
+            BuildPlatformError::WindowError(e) => {
+                write!(f, "Build window failed, {}", e)
+            }
             BuildPlatformError::AudioDeviceError(e) => {
                 write!(f, "Build audio device failed, {}", e)
             }

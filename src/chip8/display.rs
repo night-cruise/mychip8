@@ -1,4 +1,4 @@
-use crate::platform::PlatForm;
+use crate::chip8::PlatForm;
 
 // the chip-8 uses a 64x32-pixel monochrome display with this format:
 // (0,0)	       (63,0)
@@ -64,5 +64,11 @@ impl Display {
         }
         self.redraw = false;
         Ok(())
+    }
+}
+
+impl Default for Display {
+    fn default() -> Display {
+        Display::new()
     }
 }

@@ -1,9 +1,4 @@
-use crate::display::Display;
-use crate::keyboard::KeyBoard;
-use crate::memory::Memory;
-use crate::operation::Op;
-use crate::settings::Settings;
-use rand::Rng;
+use crate::chip8::{Display, KeyBoard, Memory, Op, Rng, Settings};
 
 /// chip-8 cpu
 pub struct Cpu {
@@ -329,5 +324,11 @@ impl Cpu {
         if settings.increment_i_register {
             self.i += reg as u16 + 1;
         }
+    }
+}
+
+impl Default for Cpu {
+    fn default() -> Cpu {
+        Cpu::new()
     }
 }

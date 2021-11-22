@@ -60,3 +60,9 @@ impl KeyBoard {
         self.keys[key as usize] = false;
     }
 }
+
+impl Default for KeyBoard {
+    fn default() -> KeyBoard {
+        KeyBoard::new()
+    }
+}

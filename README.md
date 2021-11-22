@@ -8,7 +8,7 @@ A CHIP-8 game console emulator implemented with rust.
 ## To-do list
 
 1. ~~complete the `result` type processing in the program.~~
-2. adjust the project structure.
+2. ~~adjust the project structure.~~
 3. improve the performance of some functions.
 4. write a user-friendly command line interface.
 

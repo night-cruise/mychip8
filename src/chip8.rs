@@ -1,66 +1,96 @@
-use crate::clock::Clock;
-use crate::cpu::Cpu;
-use crate::display::Display;
-use crate::keyboard::KeyBoard;
-use crate::keymap::KeyMap;
-use crate::memory::Memory;
-use crate::platform::{PlatForm, PlatformEvent};
-use crate::settings::Settings;
+use std::fs::File;
+use std::io::{self, Read};
 use std::path::Path;
+use std::time::{Duration, Instant};
+
+use rand::Rng;
+
+use clock::Clock;
+use cpu::Cpu;
+use display::Display;
+use keyboard::KeyBoard;
+use keymap::KeyMap;
+use memory::Memory;
+use operation::{Op, OpCode};
+use settings::Settings;
+
+use crate::platform::{PlatForm, PlatformEvent};
+
+pub mod clock;
+pub mod cpu;
+pub mod display;
+pub mod keyboard;
+pub mod keymap;
+pub mod memory;
+pub mod operation;
+pub mod settings;
 
 const GAME_FILE: &str = "c8games/TICTAC";
 
 /// the chip-8 interpreter
-pub struct CHIP8;
+pub struct CHIP8 {
+    cpu: Cpu,
+    display: Display,
+    memory: Memory,
+    keyboard: KeyBoard,
+    keymap: KeyMap,
+    settings: Settings,
+}
 
 impl CHIP8 {
+    /// create a chip-8 instance
+    pub fn new() -> CHIP8 {
+        CHIP8 {
+            cpu: Cpu::default(),
+            display: Display::default(),
+            memory: Memory::default(),
+            keyboard: KeyBoard::default(),
+            keymap: KeyMap::default(),
+            settings: Settings::default(),
+        }
+    }
+
     /// run chip-8 emulator
-    pub fn run() -> Result<(), Box<dyn std::error::Error>> {
-        let mut memory = Memory::new();
-        memory.load_rom(Path::new(GAME_FILE))?;
-
-        let mut display = Display::new();
-
-        let mut keyboard = KeyBoard::new();
-
-        let mut cpu = Cpu::new();
-
-        let settings = Settings::new();
-
-        let keymap = KeyMap::new();
+    pub fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
+        self.memory.load_rom(Path::new(GAME_FILE))?;
 
         let mut platform = PlatForm::new("CHIP-8")?;
 
-        let mut cpu_clock = Clock::new(settings.cpu_freq);
-        let mut dt_clock = Clock::new(settings.delay_timer_freq);
-        let mut st_clock = Clock::new(settings.sound_timer_freq);
+        let mut cpu_clock = Clock::new(self.settings.cpu_freq);
+        let mut dt_clock = Clock::new(self.settings.delay_timer_freq);
+        let mut st_clock = Clock::new(self.settings.sound_timer_freq);
 
         let mut done = false;
         while !done {
-            match platform.poll_event(&keymap) {
+            match platform.poll_event(&self.keymap) {
                 PlatformEvent::KeyDown(key) => {
-                    keyboard.press_key(key);
+                    self.keyboard.press_key(key);
                 }
-                PlatformEvent::KeyUp(key) => keyboard.release_key(key),
+                PlatformEvent::KeyUp(key) => self.keyboard.release_key(key),
                 PlatformEvent::Quit => {
                     done = true;
                 }
                 PlatformEvent::None => {
                     if st_clock.tick() {
-                        let beep = cpu.cycle_st();
-                        platform.beep(beep && !settings.mute);
+                        let beep = self.cpu.cycle_st();
+                        platform.beep(beep && !self.settings.mute);
                     }
 
                     if dt_clock.tick() {
-                        cpu.cycle_dt();
+                        self.cpu.cycle_dt();
                     }
 
                     if cpu_clock.tick() {
-                        cpu.pipeline_operation(&mut memory, &mut display, &mut keyboard, &settings);
+                        self.cpu.pipeline_operation(
+                            &mut self.memory,
+                            &mut self.display,
+                            &mut self.keyboard,
+                            &self.settings,
+                        );
 
-                        if display.redraw() {
+                        if self.display.redraw() {
                             platform.clear();
-                            display.draw(&mut platform)?;
+                            self.display.draw(&mut platform)?;
                             platform.present();
                         }
                     }
@@ -69,5 +99,11 @@ impl CHIP8 {
         }
 
         Ok(())
+    }
+}
+
+impl Default for CHIP8 {
+    fn default() -> CHIP8 {
+        CHIP8::new()
     }
 }

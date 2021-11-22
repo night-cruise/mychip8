@@ -1,5 +1,6 @@
+use crate::chip8::keymap::KeyMap;
 use crate::error::BuildPlatformError;
-use crate::keymap::KeyMap;
+
 use sdl2::audio::{AudioCallback, AudioDevice, AudioSpecDesired};
 use sdl2::event::Event;
 use sdl2::keyboard::Keycode;

@@ -1,4 +1,4 @@
-use std::time::{Duration, Instant};
+use crate::chip8::{Duration, Instant};
 
 /// the clock of chip-8
 pub struct Clock {

@@ -38,3 +38,9 @@ impl KeyMap {
         }
     }
 }
+
+impl Default for KeyMap {
+    fn default() -> KeyMap {
+        KeyMap::new()
+    }
+}

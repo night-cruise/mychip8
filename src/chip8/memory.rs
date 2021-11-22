@@ -1,7 +1,4 @@
-use crate::operation::OpCode;
-use std::fs::File;
-use std::io::{self, Read};
-use std::path::Path;
+use crate::chip8::{io, File, OpCode, Path, Read};
 
 /// chip-8 has a 4KB memory
 const MEMORY_SIZE: usize = 4096;
@@ -87,5 +84,11 @@ impl Memory {
     /// write data to memory
     pub fn write(&mut self, address: u16, byte: u8) {
         self.mem[address as usize] = byte;
+    }
+}
+
+impl Default for Memory {
+    fn default() -> Memory {
+        Memory::new()
     }
 }
