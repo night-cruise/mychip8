@@ -1,5 +1,5 @@
 use crate::chip8::keymap::KeyMap;
-use crate::error::BuildPlatformError;
+use crate::error::BuildManagerError;
 
 use sdl2::audio::{AudioCallback, AudioDevice, AudioSpecDesired};
 use sdl2::event::Event;
@@ -13,40 +13,40 @@ const DISPLAY_W: u32 = 64;
 const DISPLAY_H: u32 = 32;
 const DISPLAY_SCALE: u32 = 20;
 
-/// platform event
-pub enum PlatformEvent {
+/// possible keyboard event
+pub enum ManagerEvent {
     KeyDown(u8), // represent the event of pressing a key
     KeyUp(u8),   // represent the event of releasing a key
     Quit,        // quit event
     None,        // nothing happened
 }
 
-/// platform type
-pub struct PlatForm {
+/// manage the video, audio and keyboard events
+pub struct Manager {
     canvas: WindowCanvas,            // used to draw on the screen
     device: AudioDevice<SquareWave>, // used to handle the audio device
     event_pump: EventPump,           // used to listen for event
 }
 
-impl PlatForm {
+impl Manager {
     /// create a platform instance
-    pub fn new(name: &str) -> Result<PlatForm, BuildPlatformError> {
+    pub fn new(name: &str) -> Result<Manager, BuildManagerError> {
         let w = DISPLAY_W * DISPLAY_SCALE;
         let h = DISPLAY_H * DISPLAY_SCALE;
 
-        let sdl_context = sdl2::init().map_err(BuildPlatformError::SdlContextError)?;
+        let sdl_context = sdl2::init().map_err(BuildManagerError::SdlContextError)?;
         let video_subsystem = sdl_context
             .video()
-            .map_err(BuildPlatformError::VideoSubsystemError)?;
+            .map_err(BuildManagerError::VideoSubsystemError)?;
         let audio_subsystem = sdl_context
             .audio()
-            .map_err(BuildPlatformError::AudioSubsystemError)?;
+            .map_err(BuildManagerError::AudioSubsystemError)?;
 
         let window = video_subsystem
             .window(name, w, h)
             .position_centered()
             .build()
-            .map_err(BuildPlatformError::WindowError)?;
+            .map_err(BuildManagerError::WindowError)?;
 
         let desired_spec = AudioSpecDesired {
             freq: Some(523),
@@ -63,18 +63,18 @@ impl PlatForm {
                     volume: 0.25,
                 }
             })
-            .map_err(BuildPlatformError::AudioDeviceError)?;
+            .map_err(BuildManagerError::AudioDeviceError)?;
 
         let canvas = window
             .into_canvas()
             .build()
-            .map_err(BuildPlatformError::WindowCanvasError)?;
+            .map_err(BuildManagerError::WindowCanvasError)?;
 
         let event_pump = sdl_context
             .event_pump()
-            .map_err(BuildPlatformError::EventPumpError)?;
+            .map_err(BuildManagerError::EventPumpError)?;
 
-        Ok(PlatForm {
+        Ok(Manager {
             canvas,
             device,
             event_pump,
@@ -118,22 +118,23 @@ impl PlatForm {
     }
 
     /// listen for events(KeyDown, KeyUp, Quit, None)
-    pub fn poll_event(&mut self, keymap: &KeyMap) -> PlatformEvent {
+    pub fn poll_event(&mut self, keymap: &KeyMap) -> ManagerEvent {
         if let Some(event) = self.event_pump.poll_event() {
             match event {
+                Event::Quit { .. } => ManagerEvent::Quit,
                 Event::KeyDown {
                     keycode: Some(Keycode::Escape),
                     ..
-                } => PlatformEvent::Quit,
+                } => ManagerEvent::Quit,
 
                 Event::KeyDown {
                     keycode: Some(keycode),
                     ..
                 } => {
                     if let Some(key) = keymap.keycode(keycode) {
-                        PlatformEvent::KeyDown(key)
+                        ManagerEvent::KeyDown(key)
                     } else {
-                        PlatformEvent::None
+                        ManagerEvent::None
                     }
                 }
 
@@ -142,17 +143,16 @@ impl PlatForm {
                     ..
                 } => {
                     if let Some(key) = keymap.keycode(keycode) {
-                        PlatformEvent::KeyUp(key)
+                        ManagerEvent::KeyUp(key)
                     } else {
-                        PlatformEvent::None
+                        ManagerEvent::None
                     }
                 }
 
-                Event::Quit { .. } => PlatformEvent::Quit,
-                _ => PlatformEvent::None,
+                _ => ManagerEvent::None,
             }
         } else {
-            PlatformEvent::None
+            ManagerEvent::None
         }
     }
 }

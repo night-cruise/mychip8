@@ -3,7 +3,7 @@ use std::error;
 use std::fmt::{Debug, Display, Formatter};
 
 #[derive(Debug)]
-pub enum BuildPlatformError {
+pub enum BuildManagerError {
     SdlContextError(String),
     VideoSubsystemError(String),
     AudioSubsystemError(String),
@@ -13,35 +13,35 @@ pub enum BuildPlatformError {
     EventPumpError(String),
 }
 
-impl Display for BuildPlatformError {
+impl Display for BuildManagerError {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            BuildPlatformError::SdlContextError(e) => {
+            BuildManagerError::SdlContextError(e) => {
                 write!(f, "Build SDL2 context failed, {}", e)
             }
-            BuildPlatformError::VideoSubsystemError(e) => {
+            BuildManagerError::VideoSubsystemError(e) => {
                 write!(f, "Build video subsystem failed, {}", e)
             }
-            BuildPlatformError::AudioSubsystemError(e) => {
+            BuildManagerError::AudioSubsystemError(e) => {
                 write!(f, "Build audio subsystem failed, {}", e)
             }
-            BuildPlatformError::WindowError(e) => {
+            BuildManagerError::WindowError(e) => {
                 write!(f, "Build window failed, {}", e)
             }
-            BuildPlatformError::AudioDeviceError(e) => {
+            BuildManagerError::AudioDeviceError(e) => {
                 write!(f, "Build audio device failed, {}", e)
             }
-            BuildPlatformError::WindowCanvasError(e) => {
+            BuildManagerError::WindowCanvasError(e) => {
                 write!(f, "Build window canvas failed, {}", e)
             }
-            BuildPlatformError::EventPumpError(e) => {
+            BuildManagerError::EventPumpError(e) => {
                 write!(f, "Build event pump failed, {}", e)
             }
         }
     }
 }
 
-impl error::Error for BuildPlatformError {
+impl error::Error for BuildManagerError {
     fn source(&self) -> Option<&(dyn error::Error + 'static)> {
         None
     }

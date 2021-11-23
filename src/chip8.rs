@@ -14,7 +14,7 @@ use memory::Memory;
 use operation::{Op, OpCode};
 use settings::Settings;
 
-use crate::platform::{PlatForm, PlatformEvent};
+use crate::manager::{Manager, ManagerEvent};
 
 pub mod clock;
 pub mod cpu;
@@ -35,18 +35,33 @@ pub struct CHIP8 {
     keyboard: KeyBoard,
     keymap: KeyMap,
     settings: Settings,
+    cpu_clock: Clock,
+    dt_clock: Clock,
+    st_clock: Clock,
 }
 
 impl CHIP8 {
     /// create a chip-8 instance
     pub fn new() -> CHIP8 {
+        let cpu = Cpu::default();
+        let display = Display::default();
+        let memory = Memory::default();
+        let keyboard = KeyBoard::default();
+        let keymap = KeyMap::default();
+        let settings = Settings::default();
+        let cpu_clock = Clock::new(settings.cpu_freq);
+        let st_clock = Clock::new(settings.sound_timer_freq);
+        let dt_clock = Clock::new(settings.delay_timer_freq);
         CHIP8 {
-            cpu: Cpu::default(),
-            display: Display::default(),
-            memory: Memory::default(),
-            keyboard: KeyBoard::default(),
-            keymap: KeyMap::default(),
-            settings: Settings::default(),
+            cpu,
+            display,
+            memory,
+            keyboard,
+            keymap,
+            settings,
+            cpu_clock,
+            st_clock,
+            dt_clock,
         }
     }
 
@@ -54,33 +69,29 @@ impl CHIP8 {
     pub fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
         self.memory.load_rom(Path::new(GAME_FILE))?;
 
-        let mut platform = PlatForm::new("CHIP-8")?;
-
-        let mut cpu_clock = Clock::new(self.settings.cpu_freq);
-        let mut dt_clock = Clock::new(self.settings.delay_timer_freq);
-        let mut st_clock = Clock::new(self.settings.sound_timer_freq);
+        let mut manager = Manager::new("CHIP-8")?;
 
         let mut done = false;
         while !done {
-            match platform.poll_event(&self.keymap) {
-                PlatformEvent::KeyDown(key) => {
+            match manager.poll_event(&self.keymap) {
+                ManagerEvent::KeyDown(key) => {
                     self.keyboard.press_key(key);
                 }
-                PlatformEvent::KeyUp(key) => self.keyboard.release_key(key),
-                PlatformEvent::Quit => {
+                ManagerEvent::KeyUp(key) => self.keyboard.release_key(key),
+                ManagerEvent::Quit => {
                     done = true;
                 }
-                PlatformEvent::None => {
-                    if st_clock.tick() {
+                ManagerEvent::None => {
+                    if self.st_clock.tick() {
                         let beep = self.cpu.cycle_st();
-                        platform.beep(beep && !self.settings.mute);
+                        manager.beep(beep && !self.settings.mute);
                     }
 
-                    if dt_clock.tick() {
+                    if self.dt_clock.tick() {
                         self.cpu.cycle_dt();
                     }
 
-                    if cpu_clock.tick() {
+                    if self.cpu_clock.tick() {
                         self.cpu.pipeline_operation(
                             &mut self.memory,
                             &mut self.display,
@@ -89,9 +100,9 @@ impl CHIP8 {
                         );
 
                         if self.display.redraw() {
-                            platform.clear();
-                            self.display.draw(&mut platform)?;
-                            platform.present();
+                            manager.clear();
+                            self.display.draw(&mut manager)?;
+                            manager.present();
                         }
                     }
                 }
