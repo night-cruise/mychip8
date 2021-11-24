@@ -1,17 +1,30 @@
 # mychip8
-A CHIP-8 game console emulator implemented with rust.
+*A CHIP-8 game console emulator implemented with rust.*
 
 ![TICTAC](TICTAC.png)
 
 
+## Install 
+Download *mychip.zip* from the [release](https://github.com/night-cruise/mychip8/releases) page and unzip it.
 
-## To-do list
 
-1. ~~complete the `result` type processing in the program.~~
-2. ~~adjust the project structure.~~
-3. ~~improve the performance of some functions.~~
-4. write a user-friendly command line interface.
+## Usage
+Enter `mychip8 - h` on the command line to view the detailed usage commands:
+```text
+mychip8 0.1.0
+A CHIP-8 game console emulator
 
+USAGE:
+    main.exe [FLAGS] <GAME_PATH>
+
+FLAGS:
+    -h, --help                 Prints help information
+    -p, --print-instruction    Prints the instructions
+    -V, --version              Prints version information
+
+ARGS:
+    <GAME_PATH>    game path
+```
 
 
 ## Game Source
