@@ -17,3 +17,4 @@ path = "bin/main.rs"
 [dependencies]
 rand = "0.8.0"
 sdl2 = "0.35"
+structopt = "0.3.25"
