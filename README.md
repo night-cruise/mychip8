@@ -15,7 +15,7 @@ mychip8 0.1.0
 A CHIP-8 game console emulator
 
 USAGE:
-    main.exe [FLAGS] <GAME_PATH>
+    mychip8.exe [FLAGS] <GAME_PATH>
 
 FLAGS:
     -h, --help                 Prints help information
