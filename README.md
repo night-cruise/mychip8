@@ -5,7 +5,7 @@
 
 
 ## Install 
-Download *mychip.zip* from the [release](https://github.com/night-cruise/mychip8/releases) page and unzip it.
+Download *mychip8.zip* from the [release](https://github.com/night-cruise/mychip8/releases) page and unzip it.
 
 
 ## Usage
