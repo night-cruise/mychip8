@@ -30,7 +30,7 @@ pub struct Manager {
 
 impl Manager {
     /// create a platform instance
-    pub fn new(name: &str) -> Result<Manager, BuildManagerError> {
+    pub fn new() -> Result<Manager, BuildManagerError> {
         let w = DISPLAY_W * DISPLAY_SCALE;
         let h = DISPLAY_H * DISPLAY_SCALE;
 
@@ -43,7 +43,7 @@ impl Manager {
             .map_err(BuildManagerError::AudioSubsystemError)?;
 
         let window = video_subsystem
-            .window(name, w, h)
+            .window("CHIP-8", w, h)
             .position_centered()
             .build()
             .map_err(BuildManagerError::WindowError)?;

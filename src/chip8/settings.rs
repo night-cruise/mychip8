@@ -22,22 +22,19 @@ pub struct Settings {
 }
 
 impl Settings {
-    pub fn new() -> Settings {
+    /// create a settings instance
+    pub fn new(game_name: &str) -> Settings {
+        let shift_vx_ignore_vy = matches!(game_name, "BLINKY" | "INVADERS" | "TICTAC");
+
         Settings {
             cpu_freq: 700,
             delay_timer_freq: 60,
             sound_timer_freq: 60,
             increment_i_register: false,
-            shift_vx_ignore_vy: true,
+            shift_vx_ignore_vy,
             set_vf_when_overflow: false,
             mute: false,
             vertical_wrap: false,
         }
-    }
-}
-
-impl Default for Settings {
-    fn default() -> Settings {
-        Settings::new()
     }
 }

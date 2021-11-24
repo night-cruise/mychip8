@@ -25,8 +25,6 @@ pub mod memory;
 pub mod operation;
 pub mod settings;
 
-const GAME_FILE: &str = "c8games/TICTAC";
-
 /// the chip-8 interpreter
 pub struct CHIP8 {
     cpu: Cpu,
@@ -42,13 +40,13 @@ pub struct CHIP8 {
 
 impl CHIP8 {
     /// create a chip-8 instance
-    pub fn new() -> CHIP8 {
+    pub fn new(game_name: &str) -> CHIP8 {
         let cpu = Cpu::default();
         let display = Display::default();
         let memory = Memory::default();
         let keyboard = KeyBoard::default();
         let keymap = KeyMap::default();
-        let settings = Settings::default();
+        let settings = Settings::new(game_name);
         let cpu_clock = Clock::new(settings.cpu_freq);
         let st_clock = Clock::new(settings.sound_timer_freq);
         let dt_clock = Clock::new(settings.delay_timer_freq);
@@ -66,20 +64,25 @@ impl CHIP8 {
     }
 
     /// run chip-8 emulator
-    pub fn run(&mut self) -> Result<(), Box<dyn std::error::Error>> {
-        self.memory.load_rom(Path::new(GAME_FILE))?;
+    pub fn run(
+        &mut self,
+        game_path: &Path,
+        print_instruction: bool,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        self.memory.load_rom(game_path)?;
+        println!("INFO: Game was loaded to memory successfully.");
+        println!("INFO: Start running the CHIP-8 emulator.");
 
-        let mut manager = Manager::new("CHIP-8")?;
+        let mut manager = Manager::new()?;
 
-        let mut done = false;
-        while !done {
+        loop {
             match manager.poll_event(&self.keymap) {
                 ManagerEvent::KeyDown(key) => {
                     self.keyboard.press_key(key);
                 }
                 ManagerEvent::KeyUp(key) => self.keyboard.release_key(key),
                 ManagerEvent::Quit => {
-                    done = true;
+                    break;
                 }
                 ManagerEvent::None => {
                     if self.st_clock.tick() {
@@ -97,6 +100,7 @@ impl CHIP8 {
                             &mut self.display,
                             &mut self.keyboard,
                             &self.settings,
+                            print_instruction,
                         );
 
                         if self.display.redraw() {
@@ -109,12 +113,8 @@ impl CHIP8 {
             }
         }
 
+        println!("INFO: Game over.");
+        println!("INFO: Exist the CHIP-8 emulator.");
         Ok(())
-    }
-}
-
-impl Default for CHIP8 {
-    fn default() -> CHIP8 {
-        CHIP8::new()
     }
 }

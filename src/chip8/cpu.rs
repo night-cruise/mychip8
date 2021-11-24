@@ -45,18 +45,21 @@ impl Cpu {
         display: &mut Display,
         keyboard: &mut KeyBoard,
         settings: &Settings,
+        print_instruction: bool,
     ) {
         // read 2 bytes opcode at program counter
         let opcode = memory.read16(self.pc);
 
         // increment the program counter
-        let pc = self.pc; // for print
         self.pc += 2;
 
         // decode the instruction
         let op = Op::decode(&opcode);
 
-        println!("{:04X}: {:04X}  {:?}", pc, opcode.get_opcode(), op);
+        if print_instruction {
+            println!("{:04X}: {:04X} {:?}", self.pc - 2, opcode.get_opcode(), op);
+        }
+
         match op {
             Op::SYS { address } => self.sys(address),
             Op::CLS => self.cls(display),
