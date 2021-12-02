@@ -8,7 +8,32 @@
 Download *mychip8.zip* from the [release](https://github.com/night-cruise/mychip8/releases) page and unzip it.
 
 
+
+## Keyboard Mapping
+
+| computer | chip-8 |
+| -------- | ------ |
+| 1        | 1      |
+| 2        | 2      |
+| 3        | 3      |
+| 4        | C      |
+| Q        | 4      |
+| W        | 5      |
+| E        | 6      |
+| R        | D      |
+| A        | 7      |
+| S        | 8      |
+| D        | 9      |
+| F        | E      |
+| Z        | A      |
+| X        | 0      |
+| C        | B      |
+| V        | F      |
+
+
+
 ## Usage
+
 Enter `mychip8 - h` on the command line to view the detailed usage commands:
 ```text
 mychip8 0.1.0
